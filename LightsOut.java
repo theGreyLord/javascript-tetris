@@ -9,7 +9,6 @@ public class LightsOut {
 	static int[][] switchBoard;
 	static Switch[] pressedSwitches;
 	static ArrayList<Switch> listOfInvertedSwitches = new ArrayList<Switch>();
-	static ArrayList<Switch> listOfAdjacentSwitches = new ArrayList<Switch>();
 
 	static int x = 0;
 	static int y = 0;
@@ -26,13 +25,11 @@ public class LightsOut {
 //		decodeInput(args);
 		setUpEmptyBoard();
 		setupOnSwitches();
-		setupPressedSwitches();
-		processAdjacentSwitches();
-		countOnSwitches();
+		processPressedSwitches();
 	}
 
 	public static void printBoard(int[][] printableBoard) {
-		for (int i = 0; i <= 7; i++) {
+		for (int i = 7; i >= 0; i--) {
 			for (int j = 0; j <= 7; j++) {
 				System.out.print(" " + printableBoard[i][j] + " ");
 			}
@@ -40,12 +37,6 @@ public class LightsOut {
 		}
 	}
 	
-	public static void printSwitches(Switch[] pressedSwitches) {
-		for (int i = 0; i < pressedSwitches.length; i++) {
-			if(pressedSwitches[i] != null) System.out.println(pressedSwitches[i]);
-		}
-	}
-
 	public static void decodeInput(String inputString) {
 		inputArrayString = inputString.split(" ");
 //		inputArrayString = inputString;
@@ -90,43 +81,57 @@ public class LightsOut {
 		printBoard(switchBoard);
 	}
 	
-	public static void setupPressedSwitches() {
+	public static void processPressedSwitches() {
 		int pressedSwitchRow = 0;
 		int pressedSwitchColumn = 0;
-		pressedSwitches = new Switch[5];
-		int pressedSwitchCounter = 0;
 		for (int i = inputArray[0] + 2; i < inputArrayString.length; i++) {
 			pressedSwitchRow = Integer.parseInt(inputArrayString[i].substring(0, 1)) - 1; // 4
 			pressedSwitchColumn = Integer.parseInt(inputArrayString[i].substring(1, 2)) - 1; // 3
-			pressedSwitches[pressedSwitchCounter++] = new Switch(pressedSwitchRow, pressedSwitchColumn);
-			// This is the one that was pressed,so special handling for this one
-			toggleSwitch(new Switch(pressedSwitchRow,pressedSwitchColumn));
-			listOfInvertedSwitches.add(new Switch(pressedSwitchRow,pressedSwitchColumn));
+			Switch pressedSwitch = new Switch(pressedSwitchRow,pressedSwitchColumn);
+			toggleSwitch(pressedSwitch);
+			listOfInvertedSwitches.add(pressedSwitch);
+			processAdjacentSwitches(pressedSwitch);
+			listOfInvertedSwitches.clear();
 		}
-
-		System.out.println("switchPressedBoard: ");
-		printBoard(switchBoard);
-		
-		printSwitches(pressedSwitches);
 	}
 	
-	public static void processAdjacentSwitches() {
-		for (int i = 0; i < pressedSwitches.length; i++) {
-			if(pressedSwitches[i] != null) {
-				ArrayList<Switch> listOfAdjacentSwitches = 
-						toggleAdjacentSwitches(pressedSwitches[i]);
-				System.out.println("firstProcessedBoard: ");
-				printBoard(switchBoard);
-				
-				processSecondSetOfAdjacentSwitches(listOfAdjacentSwitches);
-				System.out.println("secondProcessedBoard: ");
-				printBoard(switchBoard);
-				
-			}
-		}
+	public static void processAdjacentSwitches(Switch aPressedSwitch) {
+		ArrayList<Switch> listOfAdjacentSwitches = 
+				toggleAdjacentSwitches(aPressedSwitch);
+		System.out.println("firstProcessedBoard: ");
+		printBoard(switchBoard);
+		
+		processSecondSetOfAdjacentSwitches(listOfAdjacentSwitches);
+		System.out.println("secondProcessedBoard: ");
+		printBoard(switchBoard);
+
+		countOnSwitches();
+	}
+	
+	public static ArrayList<Switch> toggleAdjacentSwitches(Switch aSwitch) {
+		int i = aSwitch.x;
+		int j = aSwitch.y;
+		Switch leftSwitch = new Switch(i - 1, j);
+		Switch bottomSwitch = new Switch(i, j-1);
+		Switch rightSwitch = new Switch(i + 1, j);
+		Switch topSwitch = new Switch(i, j + 1);
+		
+		toggleSwitch(leftSwitch);
+		toggleSwitch(bottomSwitch);
+		toggleSwitch(rightSwitch);
+		toggleSwitch(topSwitch);
+		
+		ArrayList<Switch> listOfAdjacentSwitches = new ArrayList<Switch>();
+		listOfAdjacentSwitches.add(leftSwitch);
+		listOfAdjacentSwitches.add(bottomSwitch);
+		listOfAdjacentSwitches.add(rightSwitch);
+		listOfAdjacentSwitches.add(topSwitch);
+		return listOfAdjacentSwitches;
 	}
 	
 	public static void processSecondSetOfAdjacentSwitches(ArrayList<Switch> listOfSwitches) {
+		System.out.println("processSecondSetOfAdjacentSwitches: " + listOfSwitches.size());
+
 		for(Switch aSwitch:listOfSwitches) {
 			int i = aSwitch.x;
 			int j = aSwitch.y;
@@ -135,20 +140,6 @@ public class LightsOut {
 			toggleSwitch(new Switch(i + 1, j)); // Down
 			toggleSwitch(new Switch(i, j + 1)); // Right
 		}
-	}
-	
-	public static ArrayList<Switch> toggleAdjacentSwitches(Switch aSwitch) {
-		int i = aSwitch.x;
-		int j = aSwitch.y;
-		toggleSwitch(new Switch(i - 1, j)); // Up
-		toggleSwitch(new Switch(i, j - 1)); // Left
-		toggleSwitch(new Switch(i + 1, j)); // Down
-		toggleSwitch(new Switch(i, j + 1)); // Right
-		listOfAdjacentSwitches.add(new Switch(i - 1, j));
-		listOfAdjacentSwitches.add(new Switch(i, j - 1));
-		listOfAdjacentSwitches.add(new Switch(i + 1, j));
-		listOfAdjacentSwitches.add(new Switch(i, j + 1));
-		return listOfAdjacentSwitches;
 	}
 	
 	public static void toggleSwitch(Switch aSwitch) {
@@ -167,8 +158,6 @@ public class LightsOut {
 		} catch (ArrayIndexOutOfBoundsException e) {
 			;
 		}
-		System.out.println("One Toggle Processed");
-		printBoard(switchBoard);
 	}
 	
 	public static void countOnSwitches() {
